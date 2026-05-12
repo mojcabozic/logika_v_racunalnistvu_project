@@ -36,8 +36,8 @@ data Literal : Set where
 
 data NNF : Set where
   lit : Literal → NNF
-  _∧_ : NNF → NNF → NNF
-  _∨_ : NNF → NNF → NNF
+  _∧*_ : NNF → NNF → NNF
+  _∨*_ : NNF → NNF → NNF
 
 {- -----------------------------------------------------------------------------
     Problem 3: 
@@ -46,20 +46,17 @@ data NNF : Set where
 ----------------------------------------------------------------------------- -}
 
 {-
-    We create a helper function that uses De Morgan's laws:
+    We use De Morgan's laws:
     ¬(A ∧ B) ≡ (¬A ∨ ¬B), ¬(A ∨ B) ≡ (¬A ∧ ¬B), ¬¬A ≡ A
 -}
 
-mutual                                  -- mutual: definitions depend on the another
-  toNNF : Formula → NNF
-  toNNF (Var n)   = lit (pos n)
-  toNNF (¬ f)     = negToNNF f
-  toNNF (f ∧ g)   = toNNF f ∧ toNNF g
-  toNNF (f ∨ g)   = toNNF f ∨ toNNF g
-
-  negToNNF : Formula → NNF
-  negToNNF (Var n)   = lit (neg n)
-  negToNNF (¬ f)     = toNNF f                      -- ¬¬A ≡ A
-  negToNNF (f ∧ g)   = negToNNF f ∨ negToNNF g      -- ¬(A ∧ B) ≡ (¬A ∨ ¬B)
-  negToNNF (f ∨ g)   = negToNNF f ∧ negToNNF g      -- ¬(A ∨ B) ≡ (¬A ∧ ¬B)
+to-nnf : Formula → NNF
+to-nnf (Var x) = lit (pos x)
+to-nnf (¬ Var x) = lit (neg x)
+to-nnf (¬ (¬ f)) = to-nnf f                             -- ¬¬A ≡ A
+to-nnf (¬ (f ∧ g)) = to-nnf (¬ f) ∨* to-nnf (¬ g)       -- ¬(A ∧ B) ≡ (¬A ∨ ¬B)
+to-nnf (¬ (f ∨ g)) = to-nnf (¬ f) ∧* to-nnf (¬ g)       -- ¬(A ∨ B) ≡ (¬A ∧ ¬B)
+to-nnf (f ∧ g) = to-nnf f ∧* to-nnf g
+to-nnf (f ∨ g) = to-nnf f ∨* to-nnf g
+    
 
