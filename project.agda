@@ -77,8 +77,6 @@ record DecType : Set₁ where
     carr   : Set
     test-≡ : (x y : carr) → Dec (x ≡ y)
 
-open DecType
-
 module AssocList (K : DecType) (V : Set) where
 
   open DecType K
