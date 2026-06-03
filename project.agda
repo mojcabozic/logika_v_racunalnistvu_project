@@ -84,28 +84,28 @@ record DecType : Set₁ where
 
 module Assoc (K : DecType) (V : Set) where
   open DecType K
-  
-  Assoc : Set
-  Assoc = List (carr K × V)
 
-  _∈_ : carr K → Assoc → Set
+  Assoc : Set
+  Assoc = List (carr × V)
+
+  _∈_ : carr → Assoc → Set
   k ∈ kvs = Any (λ { (k' , _) → k ≡ k' }) kvs
 
-  lookup : {k : carr K} {kvs : Assoc} → k ∈ kvs → V
+  lookup : {k : carr} {kvs : Assoc} → k ∈ kvs → V
   lookup (here {x = (_ , v)} _) = v
   lookup (there p)               = lookup p
 
-  _∈?_ : (k : carr K) → (kvs : Assoc) → Dec (k ∈ kvs)
-  k ∈? kvs = any? (λ { (k' , _) → test-≡ K k k' }) kvs
+  _∈?_ : (k : carr) → (kvs : Assoc) → Dec (k ∈ kvs)
+  k ∈? kvs = any? (λ { (k' , _) → test-≡ k k' }) kvs
 
-  _‼_ : (kvs : Assoc) → (k : carr K) → Maybe V
+  _‼_ : (kvs : Assoc) → (k : carr) → Maybe V
   kvs ‼ k with k ∈? kvs
   ... | yes p = just (lookup p)
   ... | no  _ = nothing
 
-  _[_]≔_ : Assoc → carr K → V → Assoc
+  _[_]≔_ : Assoc → carr → V → Assoc
   []              [ k ]≔ v = (k , v) ∷ []
-  ((k' , v') ∷ kvs) [ k ]≔ v with test-≡ K k k'
+  ((k' , v') ∷ kvs) [ k ]≔ v with test-≡ k k'
   ... | yes _ = (k , v) ∷ kvs    -- overwrite existing key
   ... | no  _ = (k' , v') ∷ (kvs [ k ]≔ v)  -- keep looking
 
@@ -114,11 +114,6 @@ open import Data.Nat.Properties using (_≟_)
 ℕ-DecType : DecType
 ℕ-DecType = record { carr = ℕ ; test-≡ = _≟_ }
 
-open Assoc ℕ-DecType Bool
-
-Assignment : Set
-Assignment = Assoc
-
 
 {- -----------------------------------------------------------------------------
     Problem 5:
@@ -126,8 +121,6 @@ Assignment = Assoc
     assigning to each assignment of variables and formula its truth value.
     
 ----------------------------------------------------------------------------- -}
-
-
 
 -- definiramo DecType za naravna števila
 NatDecType : DecType
