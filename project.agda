@@ -106,13 +106,8 @@ module Assoc (K : DecType) (V : Set) where
   _[_]≔_ : Assoc → carr → V → Assoc
   []              [ k ]≔ v = (k , v) ∷ []
   ((k' , v') ∷ kvs) [ k ]≔ v with test-≡ k k'
-  ... | yes _ = (k , v) ∷ kvs    -- overwrite existing key
-  ... | no  _ = (k' , v') ∷ (kvs [ k ]≔ v)  -- keep looking
-
-open import Data.Nat.Properties using (_≟_)
-
-ℕ-DecType : DecType
-ℕ-DecType = record { carr = ℕ ; test-≡ = _≟_ }
+  ... | yes _ = (k , v) ∷ kvs    -- spremeni
+  ... | no  _ = (k' , v') ∷ (kvs [ k ]≔ v)  -- se naprej isce
 
 
 {- -----------------------------------------------------------------------------
@@ -162,6 +157,7 @@ eval-nnf env (f ∧* g) with eval-nnf env f | eval-nnf env g
 eval-nnf env (f ∨* g) with eval-nnf env f | eval-nnf env g
 ... | just v1 | just v2 = just (v1 ∨b v2)
 ... | _       | _       = nothing
+
 {- -----------------------------------------------------------------------------
     Problem 7:
     Define a type of conjunction normal form formulas called CNF, with the 
@@ -172,6 +168,15 @@ eval-nnf env (f ∨* g) with eval-nnf env f | eval-nnf env g
                 | Literal ∨ Disjunct
         CNF → Disjunct ∨ CNF
 ----------------------------------------------------------------------------- -}
+-- literal ze imamo
+
+data Disjunct : Set where
+  lit-d  : Literal → Disjunct
+  _∨-d_  : Literal → Disjunct → Disjunct
+
+data CNF : Set where
+  dis    : Disjunct → CNF
+  _∧-c_  : Disjunct → CNF → CNF
 
 {- -----------------------------------------------------------------------------
     Problem 8:
@@ -180,3 +185,21 @@ eval-nnf env (f ∨* g) with eval-nnf env f | eval-nnf env g
     formula its truth value.
 ----------------------------------------------------------------------------- -}
 
+eval-disjunct : Assignment → Disjunct → Maybe Bool
+eval-disjunct env (lit-d (pos x)) = env ‼ x
+eval-disjunct env (lit-d (neg x)) with env ‼ x
+... | just v  = just (not v)
+... | nothing = nothing
+eval-disjunct env ((pos x) ∨-d d) with env ‼ x | eval-disjunct env d
+... | just v1 | just v2 = just (v1 ∨b v2)
+... | _       | _       = nothing
+eval-disjunct env ((neg x) ∨-d d) with env ‼ x | eval-disjunct env d
+... | just true  | just v2 = just (false ∨b v2)
+... | just false | just v2 = just (true  ∨b v2)
+... | _          | _       = nothing
+
+eval-cnf : Assignment → CNF → Maybe Bool
+eval-cnf env (dis d)    = eval-disjunct env d
+eval-cnf env (d ∧-c c) with eval-disjunct env d | eval-cnf env c
+... | just v1 | just v2 = just (v1 ∧b v2)
+... | _       | _       = nothing
