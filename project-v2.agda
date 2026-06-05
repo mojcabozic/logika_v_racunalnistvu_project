@@ -98,7 +98,7 @@ module NoDupList where
 
 open NoDupList
 
--- Tiny helper: lift a Dec across an isomorphism
+-- helper: lift a Dec across an isomorphism
 map-dec : {A B : Set} → (A → B) → (B → A) → Dec A → Dec B
 map-dec f g (yes a) = yes (f a)
 map-dec f g (no ¬a) = no  (¬a ∘ g)
@@ -111,7 +111,6 @@ module AssocList (K : DecType) (V : Set) where
   _≟_ = test-≡ K
 
   -- Association list: list of key-value pairs with no duplicate keys
-  -- We store it as a plain list; NoDupKeys enforces the invariant on keys
   Assoc : Set
   Assoc = List (carr K × V)
 
@@ -152,7 +151,7 @@ module AssocList (K : DecType) (V : Set) where
   []             [ k ]≔ v = (k , v) ∷ []
   ((k' , v') ∷ kvs) [ k ]≔ v with k ≟ k'
   ... | yes refl = (k' , v)  ∷ kvs   -- found the key: overwrite value
-  ... | no  _    = (k' , v') ∷ (kvs [ k ]≔ v)  -- not this key: recurse
+  ... | no  _    = (k' , v') ∷ (kvs [ k ]≔ v)  -- not this key: recursive call
 
   -- Empty association list
   empty : Assoc
@@ -325,7 +324,7 @@ lit-eq (neg x) (neg y) with ℕ-dec x y
 ... | no  _ = false
 lit-eq _ _ = false
 
--- A "working" CNF representation as List (List Literal) (easier to work with)
+-- A "working" CNF representation as List (List Literal)    (easier to work with)
 
 WorkingCNF : Set
 WorkingCNF = List (List Literal)
@@ -440,7 +439,7 @@ dpll (suc n) cnf assn
 -- SAT solver:
 
 max-steps : WorkingCNF → ℕ
-max-steps cnf = Data.List.length (all-literals cnf) * 100 -- change if needed
+max-steps cnf = Data.List.length (all-literals cnf) * 100 
 
 sat : CNF → Maybe Assignment
 sat cnf =
@@ -518,11 +517,12 @@ _ = {!test5!}
     Show that the SAT solver you implemented is correct.
 ----------------------------------------------------------------------------- -}
 
--- first prove soundness: If sat cnf returns just assn, then assn is a satisfying assignment for cnf
-
-sat-sound : ∀ (cnf : CNF) (assn : Assignment)
-  → sat cnf ≡ just assn
-  → eval-cnf assn cnf ≡ just true
+{-
+    We tried proving at least soundness for our solver, but got stuck in a loop because of our implementation of the dpll solver.
+    We wanted to keep the dpll solver and still also try to show a proof of soundness of a sat solver (we gave up on trying
+    to prove completneness, we ran out of time), so what we did was: In file simple_solver.agda we implemented a simpler solver and proved 
+    soundness on it.
+-}
 
 {- -----------------------------------------------------------------------------
     Problem 11: 
@@ -539,15 +539,14 @@ sat-sound : ∀ (cnf : CNF) (assn : Assignment)
 --      t → (a ∨b ): (¬t ∨ a ∨ b)
 --      (a ∨ b) → t: (¬a ∨ t)∧(¬b ∨ t)
 
--- We thread a "fresh variable counter" through the computation.
--- Each subformula gets a fresh variable. Emit clauses encoding the equivalence between that variable and the subformula.
+-- We have a "fresh variable counter" through the computation.
+-- Each subformula gets a fresh variable. Remove the clauses encoding the equivalence between that variable and the subformula.
 
 -- We represent the output as a list of clauses (List (List Literal))
 -- together with the "root" literal for the subformula.
 
--- State: next fresh variable index
--- We assume NNF variables are Var 0 .. Var (n-1);
--- fresh variables start at some offset we pass in.
+
+-- We assume NNF variables are Var 0 .. Var (n-1), "fresh" variables start at some offset we pass in
 
 -- Find the highest variable index used in an NNF formula
 max-var-nnf : NNF → ℕ
